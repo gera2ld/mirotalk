@@ -1941,6 +1941,22 @@ async function joinToChannel() {
     handleBodyOnMouseMove(); // show/hide buttonsBar, bottomButtons ...
 }
 
+let sortedCodecs;
+function getSortedCodecs() {
+    if (!sortedCodecs) {
+        const supportedCodecs = RTCRtpReceiver.getCapabilities('video').codecs;
+        const preferredCodecs = ['video/H264', 'video/VP8', 'video/VP9'];
+        sortedCodecs = supportedCodecs.sort((a, b) => {
+            const indexA = preferredCodecs.indexOf(a.mimeType);
+            const indexB = preferredCodecs.indexOf(b.mimeType);
+            const orderA = indexA >= 0 ? indexA : Number.MAX_VALUE;
+            const orderB = indexB >= 0 ? indexB : Number.MAX_VALUE;
+            return orderA - orderB;
+        });
+    }
+    return sortedCodecs;
+}
+
 /**
  * When we join a group, our signaling server will send out 'addPeer' events to each pair of users in the group (creating a fully-connected graph of users,
  * ie if there are 6 people in the channel you will connect directly to the other 5, so there will be a total of 15 connections in the network).
@@ -1963,6 +1979,10 @@ async function handleAddPeer(config) {
 
     // https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection
     const peerConnection = new RTCPeerConnection({ iceServers: iceServers });
+    const sortedCodecs = getSortedCodecs();
+    peerConnection.getTransceivers().forEach((transceiver) => {
+        transceiver.setCodecPreferences(sortedCodecs);
+    });
     peerConnections[peer_id] = peerConnection;
 
     allPeers = peers;

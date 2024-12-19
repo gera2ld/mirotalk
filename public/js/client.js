@@ -1101,6 +1101,10 @@ function initClientPeer() {
         isVideoFullScreenSupported = false;
     }
 
+    if (peerInfo.isMobileDevice) {
+        preventScreenLock();
+    }
+
     console.log('01. Connecting to signaling server');
 
     // Disable the HTTP long-polling transport
@@ -11265,4 +11269,16 @@ function disable(elem, disabled) {
  */
 function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Prevent screen lock to mitigate a Chromium issue:
+ * https://issuetracker.google.com/issues/236109667
+ */
+async function preventScreenLock() {
+    try {
+        await navigator.wakeLock.request('screen');
+    } catch {
+        // ignore error
+    }
 }
